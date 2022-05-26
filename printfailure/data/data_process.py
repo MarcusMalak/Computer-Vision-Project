@@ -2,6 +2,7 @@ import os
 import pandas as pd
 from torchvision.io import read_image
 from torch.utils.data import Dataset, DataLoader
+import matplotlib.pyplot as plt
 
 class ImageSet(Dataset):
     def __init__(self, csv_path, img_dir, transform = None):
@@ -20,3 +21,9 @@ class ImageSet(Dataset):
             image = self.transform(image)
         return image, label
 
+cwd = os.getcwd()
+csv_path = cwd + "/printfailure/data/dataset/3d_print_set_1/images/output/assigned_classes.csv"
+img_dir = cwd + "/printfailure/data/dataset/3d_print_set_1/images"
+
+dataset = ImageSet(csv_path, img_dir)
+train_loader = DataLoader(dataset, shuffle=True)
