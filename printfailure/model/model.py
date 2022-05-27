@@ -4,44 +4,81 @@ import torchvision
 import torchvision.transforms as transforms
 
 if __name__ == '__main__':
-    transform = transforms.Compose(
-        [transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    # transform = transforms.Compose(
+    #     [transforms.ToTensor(),
+    #     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-    batch_size = 4
-
-
-    dataset_train = torchvision.datasets.FashionMNIST("./data", train = True, download = True, transform = transforms.ToTensor())
-    idx = (dataset_train.targets==1) | (dataset_train.targets==0)
-    dataset_train.targets = dataset_train.targets[idx]
-    dataset_train.data = dataset_train.data[idx]
-
-    trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size,
-                                            shuffle=True, num_workers=2)
-
-    dataset_test = torchvision.datasets.FashionMNIST("./data", train = False, download = True, transform = transforms.ToTensor())
-    idx = (dataset_test.targets==1) | (dataset_test.targets==0)
-    dataset_test.targets = dataset_test.targets[idx]
-    dataset_test.data = dataset_test.data[idx]
-
-    testloader = torch.utils.data.DataLoader(dataset_test, batch_size=batch_size,
-                                            shuffle=False, num_workers=2)
-
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    # functions to show an image
+    # batch_size = 4
 
 
-    def imshow(img):
-        img = img / 2 + 0.5     # unnormalize
-        npimg = img.numpy()
-        plt.imshow(np.transpose(npimg, (1, 2, 0)))
-        plt.show()
+    # dataset_train = torchvision.datasets.FashionMNIST("./data", train = True, download = True, transform = transforms.ToTensor())
+    # idx = (dataset_train.targets==1) | (dataset_train.targets==0)
+    # dataset_train.targets = dataset_train.targets[idx]
+    # dataset_train.data = dataset_train.data[idx]
+
+    # trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size,
+    #                                         shuffle=True, num_workers=2)
+
+    # dataset_test = torchvision.datasets.FashionMNIST("./data", train = False, download = True, transform = transforms.ToTensor())
+    # idx = (dataset_test.targets==1) | (dataset_test.targets==0)
+    # dataset_test.targets = dataset_test.targets[idx]
+    # dataset_test.data = dataset_test.data[idx]
+
+    # testloader = torch.utils.data.DataLoader(dataset_test, batch_size=batch_size,
+    #                                         shuffle=False, num_workers=2)
+
+    # import matplotlib.pyplot as plt
+    # import numpy as np
+
+    # # functions to show an image
+
+
+    # def imshow(img):
+    #     img = img / 2 + 0.5     # unnormalize
+    #     npimg = img.numpy()
+    #     plt.imshow(np.transpose(npimg, (1, 2, 0)))
+    #     plt.show()
 
 
     import torch.nn as nn
     import torch.nn.functional as F
+    import os
+    import pandas as pd
+    from torchvision.io import read_image
+    from torch.utils.data import Dataset, DataLoader
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    class ImageSet(Dataset):
+        def __init__(self, csv_path, img_dir, transform1 = transforms.Grayscale(),  transform3 = transforms.ToTensor(), transform2 = transforms.ToPILImage()):
+            self.img_labels = pd.read_csv(csv_path)
+            self.img_dir = img_dir
+            self.transform1 = transform1
+            self.transform2 = transform2
+            self.transform3 = transform3
+            
+        def __len__(self):
+            return len(self.img_labels)
+
+        def __getitem__(self, idx):
+            img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
+            image = read_image(img_path)
+            label = self.img_labels.iloc[idx, 1]
+
+            if self.transform1:
+                image = self.transform1(image)
+            if self.transform2:
+                image = self.transform2(image)
+            if self.transform3:
+                image = self.transform3(image)    
+            return image, label
+
+    cwd = os.getcwd()
+    csv_path = cwd + "/printfailure/data/dataset/3d_print_set_1/images/output/assigned_classes.csv"
+    img_dir = cwd + "/printfailure/data/dataset/3d_print_set_1/images"
+
+    dataset = ImageSet(csv_path, img_dir)
+    train_loader = DataLoader(dataset, shuffle=True)
 
 
     class Net(nn.Module):
@@ -55,12 +92,18 @@ if __name__ == '__main__':
             self.fc3 = nn.Linear(84, 2)
 
         def forward(self, x):
-            x = self.pool(F.relu(self.conv1(x)))
-            x = self.pool(F.relu(self.conv2(x)))
-            x = torch.flatten(x, 1) # flatten all dimensions except batch
-            x = F.relu(self.fc1(x))
-            x = F.relu(self.fc2(x))
-            x = self.fc3(x)
+            # x = self.pool(F.relu(self.conv1(x)))
+            # x = self.pool(F.relu(self.conv2(x)))
+            # x = torch.flatten(x, 1) # flatten all dimensions except batch
+            # x = F.relu(self.fc1(x))
+            # x = F.relu(self.fc2(x))
+            # x = self.fc3(x)
+            x = self.conv1(x)
+            x = F.relu(x)
+            x = self.conv2(x)
+            x = F.relu(x)
+            x = self.fc1(x)
+        
             return x
 
 
@@ -74,7 +117,7 @@ if __name__ == '__main__':
     for epoch in range(3):  # loop over the dataset multiple times
 
         running_loss = 0.0
-        for i, data in enumerate(trainloader, 0):
+        for i, data in enumerate(train_loader, 0):
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data
 
@@ -95,28 +138,28 @@ if __name__ == '__main__':
 
     print('Finished Training')
 
-    correct = 0
-    total = 0
-    # since we're not training, we don't need to calculate the gradients for our outputs
-    with torch.no_grad():
-        for data in testloader:
-            images, labels = data
-            # calculate outputs by running images through the network
-            outputs = net(images)
-            # the class with the highest energy is what we choose as prediction
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+    # correct = 0
+    # total = 0
+    # # since we're not training, we don't need to calculate the gradients for our outputs
+    # with torch.no_grad():
+    #     for data in testloader:
+    #         images, labels = data
+    #         # calculate outputs by running images through the network
+    #         outputs = net(images)
+    #         # the class with the highest energy is what we choose as prediction
+    #         _, predicted = torch.max(outputs.data, 1)
+    #         total += labels.size(0)
+    #         correct += (predicted == labels).sum().item()
 
-    print(f'Accuracy of the network on the 10000 test images: {100 * correct // total} %')
-    print(total)
+    # print(f'Accuracy of the network on the 10000 test images: {100 * correct // total} %')
+    # print(total)
 
-    dataiter = iter(testloader)
-    dataiter.next()
-    images, labels = dataiter.next()
-    # imshow(torchvision.utils.make_grid(images))
-    outputs = net(images)
-    _, predicted = torch.max(outputs, 1)
+    # dataiter = iter(testloader)
+    # dataiter.next()
+    # images, labels = dataiter.next()
+    # # imshow(torchvision.utils.make_grid(images))
+    # outputs = net(images)
+    # _, predicted = torch.max(outputs, 1)
 
     # print(predicted)
 
