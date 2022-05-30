@@ -15,15 +15,15 @@ class ImageSet(Dataset):
 
     def __getitem__(self, idx):
         img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
-        image = read_image(img_path)
+        image = read_image(img_path).resize((256, 256))
         label = self.img_labels.iloc[idx, 1]
         if self.transform:
             image = self.transform(image)
         return image, label
 
 cwd = os.getcwd()
-csv_path = cwd + "/printfailure/data/dataset/3d_print_set_1/images/output/assigned_classes.csv"
-img_dir = cwd + "/printfailure/data/dataset/3d_print_set_1/images"
+csv_path = cwd + "/printfailure/data/dataset/CV_Images/output/assigned_classes.csv"
+img_dir = cwd + "/printfailure/data/dataset/CV_Images"
 
 dataset = ImageSet(csv_path, img_dir)
 train_loader = DataLoader(dataset, shuffle=True)

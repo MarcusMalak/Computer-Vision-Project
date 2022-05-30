@@ -3,6 +3,10 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 
+
+## USE 
+## brightness, contrast, flipped, shift
+
 if __name__ == '__main__':
     # transform = transforms.Compose(
     #     [transforms.ToTensor(),
@@ -74,22 +78,22 @@ if __name__ == '__main__':
             return image, label
 
     cwd = os.getcwd()
-    csv_path = cwd + "/printfailure/data/dataset/3d_print_set_1/images/output/assigned_classes.csv"
-    img_dir = cwd + "/printfailure/data/dataset/3d_print_set_1/images"
+    csv_path = cwd + "/printfailure/data/dataset/CV_Images/output/assigned_classes.csv"
+    img_dir = cwd + "/printfailure/data/dataset/CV_Images"
 
     dataset = ImageSet(csv_path, img_dir)
     train_loader = DataLoader(dataset, shuffle=True)
-
+    
 
     class Net(nn.Module):
         def __init__(self):
             super().__init__()
-            self.conv1 = nn.Conv2d(1, 6, 5)
-            self.pool = nn.MaxPool2d(2, 2)
-            self.conv2 = nn.Conv2d(6, 16, 5)
-            self.fc1 = nn.Linear(16 * 4 * 4, 120)
-            self.fc2 = nn.Linear(120, 84)
-            self.fc3 = nn.Linear(84, 2)
+            self.conv1 = nn.Conv2d(1, 6, kernel_size=5, padding=2) ## OUTPUT = 6 * 256 * 256
+            # self.pool = nn.MaxPool2d(2, 2)
+            self.conv2 = nn.Conv2d(6, 16, kernel_size=5, padding=2) ## 16 * 256 * 256
+            self.fc1 = nn.Linear(16* 256 * 256, 128)
+            self.fc2 = nn.Linear(128, 64)
+            self.fc3 = nn.Linear(64, 2)
 
         def forward(self, x):
             # x = self.pool(F.relu(self.conv1(x)))
@@ -102,12 +106,17 @@ if __name__ == '__main__':
             x = F.relu(x)
             x = self.conv2(x)
             x = F.relu(x)
+            x = torch.flatten(x, 1)
             x = self.fc1(x)
         
             return x
 
 
     net = Net()
+
+
+
+    print(net)
 
     import torch.optim as optim
 
@@ -138,21 +147,21 @@ if __name__ == '__main__':
 
     print('Finished Training')
 
-    # correct = 0
-    # total = 0
-    # # since we're not training, we don't need to calculate the gradients for our outputs
-    # with torch.no_grad():
-    #     for data in testloader:
-    #         images, labels = data
-    #         # calculate outputs by running images through the network
-    #         outputs = net(images)
-    #         # the class with the highest energy is what we choose as prediction
-    #         _, predicted = torch.max(outputs.data, 1)
-    #         total += labels.size(0)
-    #         correct += (predicted == labels).sum().item()
+    correct = 0
+    total = 0
+    # since we're not training, we don't need to calculate the gradients for our outputs
+    with torch.no_grad():
+        for data in train_loader:
+            images, labels = data
+            # calculate outputs by running images through the network
+            outputs = net(images)
+            # the class with the highest energy is what we choose as prediction
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
 
-    # print(f'Accuracy of the network on the 10000 test images: {100 * correct // total} %')
-    # print(total)
+    print(f'Accuracy of the network on the 10000 test images: {100 * correct // total} %')
+    print(total)
 
     # dataiter = iter(testloader)
     # dataiter.next()
