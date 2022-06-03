@@ -82,7 +82,13 @@ if __name__ == '__main__':
     img_dir = cwd + "/printfailure/data/dataset/CV_Images"
 
     dataset = ImageSet(csv_path, img_dir)
-    train_loader = DataLoader(dataset, shuffle=True)
+
+    train_size = int(0.8 * len(dataset))
+    test_size = len(dataset) - train_size
+    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+
+    train_loader = DataLoader(train_dataset, shuffle=True)
+    test_loader = DataLoader(test_dataset, shuffle=True)
     
 
     class Net(nn.Module):
@@ -108,65 +114,97 @@ if __name__ == '__main__':
             x = F.relu(x)
             x = torch.flatten(x, 1)
             x = self.fc1(x)
+            x = F.relu(x)
+            x = self.fc2(x)
+            x = F.relu(x)
+            x = self.fc3(x)
         
             return x
 
 
     net = Net()
 
-
-
-    print(net)
-
     import torch.optim as optim
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.0001, momentum=0.9)
 
-    for epoch in range(3):  # loop over the dataset multiple times
+    def train_model():
+        for epoch in range(2):  # loop over the dataset multiple times
+            running_loss = 0.0
+            for i, data in enumerate(train_loader, 0):
+                # get the inputs; data is a list of [inputs, labels]
+                inputs, labels = data
 
-        running_loss = 0.0
-        for i, data in enumerate(train_loader, 0):
-            # get the inputs; data is a list of [inputs, labels]
-            inputs, labels = data
+                # zero the parameter gradients
+                optimizer.zero_grad()
 
-            # zero the parameter gradients
-            optimizer.zero_grad()
+                # forward + backward + optimize
+                outputs = net(inputs)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                optimizer.step()
 
-            # forward + backward + optimize
-            outputs = net(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
+                # print statistics
+                running_loss += loss.item()
+                if i % 10 == 9:    # print every 10 mini-batches
+                    print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}')
+                    running_loss = 0.0
 
-            # print statistics
-            running_loss += loss.item()
-            if i % 2000 == 1999:    # print every 2000 mini-batches
-                print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}')
-                running_loss = 0.0
+        print('Finished Training')
+        torch.save(net.state_dict(), "train_model.pth")
+    
 
-    print('Finished Training')
+    def test_model():
+        correct = 0
+        total = 0
+        tn = 0
+        fp = 0
+        # since we're not training, we don't need to calculate the gradients for our outputs
+        with torch.no_grad():
+            for data in test_loader:
+                images, labels = data
+                # calculate outputs by running images through the network
+                outputs = net(images)
+                # the class with the highest energy is what we choose as prediction
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+                if labels == 0:
+                    tn = tn + 1
+                    if predicted == 1:
+                        fp = fp + 1
 
-    correct = 0
-    total = 0
-    # since we're not training, we don't need to calculate the gradients for our outputs
-    with torch.no_grad():
-        for data in train_loader:
-            images, labels = data
-            # calculate outputs by running images through the network
-            outputs = net(images)
-            # the class with the highest energy is what we choose as prediction
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+        recall = tn / (tn + fp)
+                
 
-    print(f'Accuracy of the network on the 10000 test images: {100 * correct // total} %')
-    print(total)
+        print(f'Accuracy of the network on the test images: {100 * correct // total} %')
+        print(tn)
+        print(fp)
+        print(recall)
+        # print(total)
 
-    # dataiter = iter(testloader)
+
+    train_model()
+
+    test_model()
+
+
+
+    # for batch in train_loader:
+    #     for data in test_loader:
+    #         images, labels = data
+    #         print(labels)
+
+    # dataiter = iter(test_loader)
     # dataiter.next()
-    # images, labels = dataiter.next()
-    # # imshow(torchvision.utils.make_grid(images))
+    # image, label = dataiter.next()
+
+ 
+
+
+
+    # imshow(torchvision.utils.make_grid(images))
     # outputs = net(images)
     # _, predicted = torch.max(outputs, 1)
 
