@@ -5,6 +5,7 @@ import torchvision
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+import numpy as np
 
 
 from data import data_process
@@ -40,17 +41,35 @@ model.to(device)
 
 ## Loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-# optimizer = optim.SGD(model.parameters(), lr=0.000005, momentum=0.9)
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
+# optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+def evaluate_accuracy(data_loader, net, device=device):
+    net.eval()  #make sure network is in evaluation mode
+
+    #init
+    acc_sum = torch.tensor([0], dtype=torch.float, device=device)
+    n = 0
+
+    for X, _, _, y in data_loader:
+        # Copy the data to device.
+        X, y = X.to(device, dtype=torch.float), y.to(device, dtype=torch.float)
+        with torch.no_grad():
+            y = y.long()
+            acc_sum += torch.sum((torch.argmax(net(X), dim=1) == y))
+            n += y.shape[0] #increases with the number of samples in the batch
+    return acc_sum.item()/n
 
 
+epochs = 10
 
 ## Training loop
 def train_model():
     correct = 0
     total = 0
-    for epoch in range(2):  # loop over the dataset multiple times
-        running_loss = 0.0
+    for epoch in range(epochs):  # loop over the dataset multiple times
+        # running_loss = 0.0
+        running_loss = []
         for i, data in enumerate(train_loader, 0):
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data[0].to(device), data[1].to(device)
@@ -67,25 +86,28 @@ def train_model():
             loss.backward()
             optimizer.step()
 
+            running_loss.append(loss.cpu().detach().numpy())
+
             ## Calculate accuracy
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
             # print statistics
-            running_loss += loss.item()
-            if i % 10 == 9:    # print every 10 mini-batches
-                print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 10:.3f}')
-                running_loss = 0.0
+            # running_loss += loss.item()
+            # if i % 10 == 9:    # print every 10 mini-batches
+            #     print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 10:.3f}')
+            #     running_loss = 0.0
 
-
-    print(f'Accuracy of the network on the test images: {100 * correct // total} %')       
+        print("Epoch: {}/{} - Loss: {:.4f}".format(epoch+1, epochs, np.mean(running_loss)))
+        print(f'Accuracy of the network on the train images: {100 * correct // total} %')       
     print('Finished Training')
+
     torch.save(model.state_dict(), "train_model.pth")
 
 
 ## Load model
-model.load_state_dict(torch.load("train_model.pth"))
+# model.load_state_dict(torch.load("train_model.pth"))
 
 ## Testing loop
 def test_model():
@@ -138,6 +160,6 @@ def test_model():
         # print(failure)
 
 
-# train_model()
+train_model()
 
-test_model()
+# test_model()
