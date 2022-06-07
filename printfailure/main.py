@@ -7,15 +7,16 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 
-
 from data import data_process
 from model import model_2 
-
 
 ## Specify image paths
 cwd = os.getcwd()
 csv_path_train = cwd + "/printfailure/data/dataset/CV_Images_12/training/output/assigned_classes.csv"
 img_dir_train = cwd + "/printfailure/data/dataset/CV_Images_12/training"
+
+# csv_path_train = cwd + "/augmented_datset_train/output/out.csv"
+# img_dir_train = cwd + "/augmented_datset_train"
 
 csv_path_test = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test2/output/assigned_classes.csv"
 img_dir_test = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test2"
@@ -41,8 +42,8 @@ model.to(device)
 
 ## Loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
-# optimizer = optim.Adam(model.parameters(), lr=0.001)
+# optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
+optimizer = optim.Adam(model.parameters(), lr=0.01)
 
 def evaluate_accuracy(data_loader, net, device=device):
     net.eval()  #make sure network is in evaluation mode
@@ -61,12 +62,16 @@ def evaluate_accuracy(data_loader, net, device=device):
     return acc_sum.item()/n
 
 
-epochs = 10
+epochs = 30
 
 ## Training loop
 def train_model():
     correct = 0
     total = 0
+    failure = 0
+    success = 0
+    correct_fail=0
+    correct_success=0
     for epoch in range(epochs):  # loop over the dataset multiple times
         # running_loss = 0.0
         running_loss = []
@@ -93,6 +98,23 @@ def train_model():
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
+            # print(_)
+            # print(predicted)
+            # print(outputs)
+
+            if labels == 1:
+                failure = failure +1
+                if predicted == 1:
+                    correct_fail += 1
+            
+            if labels == 0:
+                success = success +1
+                if predicted == 0:
+                    correct_success += 1
+
+            # print(labels)
+            # print(outputs)
+
             # print statistics
             # running_loss += loss.item()
             # if i % 10 == 9:    # print every 10 mini-batches
@@ -100,7 +122,10 @@ def train_model():
             #     running_loss = 0.0
 
         print("Epoch: {}/{} - Loss: {:.4f}".format(epoch+1, epochs, np.mean(running_loss)))
-        print(f'Accuracy of the network on the train images: {100 * correct // total} %')       
+        print(f'Accuracy of the network on the train images: {100 * correct // total} %')
+        print(f'Accuracy of the network failure: {100 * correct_fail // failure} %')
+        print(f'Accuracy of the network success: {100 * correct_success // success} %')
+
     print('Finished Training')
 
     torch.save(model.state_dict(), "train_model.pth")
@@ -113,16 +138,16 @@ def train_model():
 def test_model():
         correct = 0
         total = 0
-        tp = 0
-        fn = 0
         failure = 0
         success = 0
         correct_fail=0
-        correct_succes=0
+        correct_success=0
         # since we're not training, we don't need to calculate the gradients for our outputs
         with torch.no_grad():
             for data in test_loader:
                 images, labels = data[0].to(device), data[1].to(device)
+
+
                 # calculate outputs by running images through the network
                 outputs = model(images)
 
@@ -132,32 +157,21 @@ def test_model():
 
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
+                
                 if labels == 1:
                     failure = failure +1
-                    tp = tp + 1
-                    if predicted == 0:
-                        fn = fn + 1
                     if predicted == 1:
                         correct_fail += 1
-
+            
                 if labels == 0:
                     success = success +1
                     if predicted == 0:
-                        correct_succes += 1
+                        correct_success += 1
 
-        # recall = tp / (tp + fn)
                 
         print(f'Accuracy of the network on the test images: {100 * correct // total} %')
         print(f'Accuracy of the network failure: {100 * correct_fail // failure} %')
-        print(f'Accuracy of the network success: {100 * correct_succes // success} %')
-
-
-        # print(tp)
-        # print(fn)
-        # print(recall)
-        # print(total)
-        # print(success)
-        # print(failure)
+        print(f'Accuracy of the network success: {100 * correct_success // success} %')
 
 
 train_model()
