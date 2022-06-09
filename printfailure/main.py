@@ -9,17 +9,17 @@ import numpy as np
 
 from data import data_process
 from model import model_2 
-
+from model import model_resnet
 ## Specify image paths
 cwd = os.getcwd()
-csv_path_train = cwd + "/printfailure/data/dataset/CV_Images_12/training/output/assigned_classes.csv"
-img_dir_train = cwd + "/printfailure/data/dataset/CV_Images_12/training"
+csv_path_train = cwd + "/data/dataset/CV_Images_12/training/output/assigned_classes.csv"
+img_dir_train = cwd + "/data/dataset/CV_Images_12/training"
 
 # csv_path_train = cwd + "/augmented_datset_train/output/out.csv"
 # img_dir_train = cwd + "/augmented_datset_train"
 
-csv_path_test = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test2/output/assigned_classes.csv"
-img_dir_test = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test2"
+csv_path_test = cwd + "/data/dataset/CV_Images_12/testing/test2/output/assigned_classes.csv"
+img_dir_test = cwd + "/data/dataset/CV_Images_12/testing/test2"
 
 ## Generate train and test set
 dataset_train = data_process.ImageSet(csv_path_train, img_dir_train)
@@ -37,13 +37,14 @@ print('Using device:', device)
 print()
 
 ## Load Model
-model = model_2.Net()
+model = model_resnet.ResNet18()
+# model = model_2.Net()
 model.to(device)
 
 ## Loss function and optimizer
 criterion = nn.CrossEntropyLoss()
 # optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
-optimizer = optim.Adam(model.parameters(), lr=0.01)
+optimizer = optim.Adam(model.parameters(), lr=0.00001)
 
 def evaluate_accuracy(data_loader, net, device=device):
     net.eval()  #make sure network is in evaluation mode
@@ -75,6 +76,7 @@ def train_model():
     for epoch in range(epochs):  # loop over the dataset multiple times
         # running_loss = 0.0
         running_loss = []
+        # running_loss_v=0.0
         for i, data in enumerate(train_loader, 0):
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data[0].to(device), data[1].to(device)
@@ -116,10 +118,10 @@ def train_model():
             # print(outputs)
 
             # print statistics
-            # running_loss += loss.item()
+            # running_loss_v += loss.item()
             # if i % 10 == 9:    # print every 10 mini-batches
-            #     print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 10:.3f}')
-            #     running_loss = 0.0
+            #     print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss_v / 10:.3f}')
+            #     running_loss_v = 0.0
 
         print("Epoch: {}/{} - Loss: {:.4f}".format(epoch+1, epochs, np.mean(running_loss)))
         print(f'Accuracy of the network on the train images: {100 * correct // total} %')
@@ -176,4 +178,4 @@ def test_model():
 
 train_model()
 
-# test_model()
+test_model()
