@@ -20,8 +20,8 @@ class ImageSet(Dataset):
         image = read_image(img_path)
         label = self.img_labels.iloc[idx, 1]
 
-        if self.transform1:
-            image = self.transform1(image)
+        # if self.transform1:
+        #     image = self.transform1(image)
         if self.transform2:
             image = self.transform2(image)
         if self.transform3:

@@ -14,14 +14,14 @@ from model import model_pretrained_resnet
 import torchvision.transforms as transforms
 ## Specify image paths
 cwd = os.getcwd()
-csv_path_train = cwd + "/data/dataset/CV_Images_12/training/output/assigned_classes.csv"
-img_dir_train = cwd + "/data/dataset/CV_Images_12/training"
+csv_path_train = cwd + "/printfailure/data/dataset/CV_Images_12/training/output/assigned_classes.csv"
+img_dir_train = cwd + "/printfailure/data/dataset/CV_Images_12/training"
 #
 # csv_path_train = cwd + "/augmented_datset_train/output/out.csv"
 # img_dir_train = cwd + "/augmented_datset_train"
 
-csv_path_test = cwd + "/data/dataset/CV_Images_12/testing/test2/output/assigned_classes.csv"
-img_dir_test = cwd + "/data/dataset/CV_Images_12/testing/test2"
+csv_path_test = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test2/output/assigned_classes.csv"
+img_dir_test = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test2"
 
 ## Generate train and test set
 transform = transforms.Compose([
@@ -33,9 +33,9 @@ transform = transforms.Compose([
     ])
 
 
-# dataset_train = data_process.ImageSet(csv_path_train, img_dir_train)
-dataset_train = data_process.ImageSet(csv_path_train, img_dir_train, transform1=transform, transform2=None,
-                                      transform3=None)
+dataset_train = data_process.ImageSet(csv_path_train, img_dir_train)
+# dataset_train = data_process.ImageSet(csv_path_train, img_dir_train, transform1=transform, transform2=None,
+#                                       transform3=None)
 
 # train_loader = data_process.TrainLoader(dataset_train)
 train_loader = DataLoader(dataset_train, shuffle=False)
@@ -80,7 +80,7 @@ def evaluate_accuracy(data_loader, net, device=device):
     return acc_sum.item()/n
 
 
-epochs = 5
+epochs = 15
 
 ## Training loop
 def train_model():
@@ -151,7 +151,7 @@ def train_model():
 
 
 ## Load model
-# model.load_state_dict(torch.load("train_model.pth"))
+model.load_state_dict(torch.load("train_model.pth"))
 
 ## Testing loop
 def test_model():
@@ -193,6 +193,6 @@ def test_model():
         print(f'Accuracy of the network success: {100 * correct_success // success} %')
 
 
-train_model()
+# train_model()
 
 test_model()

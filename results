@@ -9,3 +9,14 @@ Keep in mind of the balance between success and failure
 Accuracy per class, confusion matrix
 
 Meeting on Tuesday
+
+
+####TESTING####
+
+- RESNET18 (Grayscale)
+Train Accuracy = 93%
+Test accuracy = (100% fail, 0% succes)
+
+- RESNET18 Pretrained (Color images)
+Train Accuracy = 93%
+Test accuracy = (91% fail, 99% succes)
