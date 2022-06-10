@@ -8,13 +8,15 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 
 from data import data_process
-from model import model_2 
+from model import model_2
 from model import model_resnet
+from model import model_pretrained_resnet
+import torchvision.transforms as transforms
 ## Specify image paths
 cwd = os.getcwd()
 csv_path_train = cwd + "/data/dataset/CV_Images_12/training/output/assigned_classes.csv"
 img_dir_train = cwd + "/data/dataset/CV_Images_12/training"
-
+#
 # csv_path_train = cwd + "/augmented_datset_train/output/out.csv"
 # img_dir_train = cwd + "/augmented_datset_train"
 
@@ -22,7 +24,19 @@ csv_path_test = cwd + "/data/dataset/CV_Images_12/testing/test2/output/assigned_
 img_dir_test = cwd + "/data/dataset/CV_Images_12/testing/test2"
 
 ## Generate train and test set
-dataset_train = data_process.ImageSet(csv_path_train, img_dir_train)
+transform = transforms.Compose([
+        transforms.CenterCrop(224),
+        transforms.ToPILImage(),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+
+    ])
+
+
+# dataset_train = data_process.ImageSet(csv_path_train, img_dir_train)
+dataset_train = data_process.ImageSet(csv_path_train, img_dir_train, transform1=transform, transform2=None,
+                                      transform3=None)
+
 # train_loader = data_process.TrainLoader(dataset_train)
 train_loader = DataLoader(dataset_train, shuffle=False)
 
@@ -37,8 +51,11 @@ print('Using device:', device)
 print()
 
 ## Load Model
-model = model_resnet.ResNet18()
+
+# model = model_resnet.ResNet18()
 # model = model_2.Net()
+model = model_pretrained_resnet.get_pretrained_resnet()
+
 model.to(device)
 
 ## Loss function and optimizer
@@ -63,7 +80,7 @@ def evaluate_accuracy(data_loader, net, device=device):
     return acc_sum.item()/n
 
 
-epochs = 30
+epochs = 5
 
 ## Training loop
 def train_model():
@@ -88,7 +105,7 @@ def train_model():
             outputs = model(inputs)
 
             # print(outputs)
-        
+
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -108,7 +125,7 @@ def train_model():
                 failure = failure +1
                 if predicted == 1:
                     correct_fail += 1
-            
+
             if labels == 0:
                 success = success +1
                 if predicted == 0:
@@ -155,22 +172,22 @@ def test_model():
 
                 # the class with the highest energy is what we choose as prediction
                 _, predicted = torch.max(outputs.data, 1)
-                
+
 
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
-                
+
                 if labels == 1:
                     failure = failure +1
                     if predicted == 1:
                         correct_fail += 1
-            
+
                 if labels == 0:
                     success = success +1
                     if predicted == 0:
                         correct_success += 1
 
-                
+
         print(f'Accuracy of the network on the test images: {100 * correct // total} %')
         print(f'Accuracy of the network failure: {100 * correct_fail // failure} %')
         print(f'Accuracy of the network success: {100 * correct_success // success} %')
