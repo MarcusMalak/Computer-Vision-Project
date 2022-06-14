@@ -54,12 +54,15 @@ if __name__ == "__main__":
     random.seed(235467065458465467456853256)
 
     cwd = os.getcwd()
-    csv_path = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test2/output/assigned_classes.csv"
-    img_dir = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test2"
-    out_dir = cwd + "/small_dataset/"
+    csv_path = cwd + "/printfailure/data/dataset/CV_Images/training/csv/train_csv.csv"
+    img_dir = cwd + "/printfailure/data/dataset/CV_Images/training"
+    # csv_path = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test1/output/assigned_classes.csv"
+    # img_dir = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test1"
+
+    out_dir = cwd + "/printfailure/data/dataset/augmented_train/"
     os.makedirs(out_dir)
     os.makedirs(out_dir+"output")
-    img_labels = pd.read_csv(csv_path)
+    img_labels = pd.read_csv(csv_path, sep=';')
 
     out_labels = pd.DataFrame(columns=img_labels.columns)
 
@@ -73,6 +76,6 @@ if __name__ == "__main__":
             out_labels = out_labels.append(
                 {"img": format_img_name(str(img_path).split('/')[-1], augmentation_type), "success": label,
                  "failure": img_labels.iloc[idx, 2]}, ignore_index=True)
-        break
+        # break
     out_labels.to_csv(out_dir+"/output/" + "out.csv", index=False)
 

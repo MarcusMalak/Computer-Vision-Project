@@ -5,6 +5,7 @@ import torchvision
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 
 from data import data_process
@@ -12,36 +13,59 @@ from model import model_2
 from model import model_resnet
 from model import model_pretrained_resnet
 import torchvision.transforms as transforms
+
 ## Specify image paths
 cwd = os.getcwd()
-csv_path_train = cwd + "/printfailure/data/dataset/CV_Images_12/training/output/assigned_classes.csv"
-img_dir_train = cwd + "/printfailure/data/dataset/CV_Images_12/training"
-#
-# csv_path_train = cwd + "/augmented_datset_train/output/out.csv"
-# img_dir_train = cwd + "/augmented_datset_train"
+# csv_path_train = cwd + "/printfailure/data/dataset/CV_Images_12/training/output/assigned_classes.csv"
+# img_dir_train = cwd + "/printfailure/data/dataset/CV_Images_12/training"
 
-csv_path_test = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test2/output/assigned_classes.csv"
-img_dir_test = cwd + "/printfailure/data/dataset/CV_Images_12/testing/test2"
+csv_path_train_int = cwd + "/printfailure/data/dataset/CV_images_internet/output/internet_train_csv.csv"
+img_dir_train_int = cwd + "/printfailure/data/dataset/CV_images_internet/"
 
-## Generate train and test set
-transform = transforms.Compose([
-        transforms.CenterCrop(224),
-        transforms.ToPILImage(),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-
-    ])
+csv_path_train_own = cwd + "/printfailure/data/dataset/CV_Images/training/csv/train_csv.csv"
+img_dir_train_own = cwd + "/printfailure/data/dataset/CV_Images/training"
 
 
-dataset_train = data_process.ImageSet(csv_path_train, img_dir_train)
-# dataset_train = data_process.ImageSet(csv_path_train, img_dir_train, transform1=transform, transform2=None,
-#                                       transform3=None)
+csv_path_train_aug = cwd + "/printfailure/data/dataset/augmented_train/output/out.csv"
+img_dir_train_aug = cwd + "/printfailure/data/dataset/augmented_train"
 
-# train_loader = data_process.TrainLoader(dataset_train)
+csv_path_test = cwd + "/printfailure/data/dataset/CV_Images/testing/csv/test_csv.csv"
+img_dir_test = cwd + "/printfailure/data/dataset/CV_Images/testing"
+
+
+
+# ## Generate train and test set
+# transform = transforms.Compose([
+#         transforms.CenterCrop(224),
+#         transforms.ToPILImage(),
+#         transforms.ToTensor(),
+#         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+
+#     ])
+
+
+#######Combined set########
+# dataset_train_1 = data_process.ImageSet(csv_path_train_own, img_dir_train_own, param=1)
+# dataset_train_2 = data_process.ImageSet(csv_path_train_int, img_dir_train_int, param=1)
+# full_train = torch.utils.data.ConcatDataset([dataset_train_1, dataset_train_2])
+# train_loader = DataLoader(full_train, shuffle=False)
+
+#######Own set########
+dataset_train = data_process.ImageSet(csv_path_train_own, img_dir_train_own, param=1)
 train_loader = DataLoader(dataset_train, shuffle=False)
 
-dataset_test = data_process.ImageSet(csv_path_test, img_dir_test)
-# test_loader = data_process.TrainLoader(dataset_test)
+#######Internet set########
+# dataset_train = data_process.ImageSet(csv_path_train_int, img_dir_train_int, param=1)
+# train_loader = DataLoader(dataset_train, shuffle=False)
+
+#######Augmented set########
+# dataset_train = data_process.ImageSet(csv_path_train_aug, img_dir_train_aug, param=0)
+# train_loader = DataLoader(dataset_train, shuffle=False)
+
+
+
+
+dataset_test = data_process.ImageSet(csv_path_test, img_dir_test, param=1)
 test_loader = DataLoader(dataset_test, shuffle=False)
 
 
@@ -52,9 +76,9 @@ print()
 
 ## Load Model
 
-# model = model_resnet.ResNet18()
+model = model_resnet.ResNet18()
 # model = model_2.Net()
-model = model_pretrained_resnet.get_pretrained_resnet()
+# model = model_pretrained_resnet.get_pretrained_resnet()
 
 model.to(device)
 
@@ -63,24 +87,10 @@ criterion = nn.CrossEntropyLoss()
 # optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
 optimizer = optim.Adam(model.parameters(), lr=0.00001)
 
-def evaluate_accuracy(data_loader, net, device=device):
-    net.eval()  #make sure network is in evaluation mode
 
-    #init
-    acc_sum = torch.tensor([0], dtype=torch.float, device=device)
-    n = 0
+writer = SummaryWriter()
 
-    for X, _, _, y in data_loader:
-        # Copy the data to device.
-        X, y = X.to(device, dtype=torch.float), y.to(device, dtype=torch.float)
-        with torch.no_grad():
-            y = y.long()
-            acc_sum += torch.sum((torch.argmax(net(X), dim=1) == y))
-            n += y.shape[0] #increases with the number of samples in the batch
-    return acc_sum.item()/n
-
-
-epochs = 15
+epochs = 40
 
 ## Training loop
 def train_model():
@@ -145,13 +155,16 @@ def train_model():
         print(f'Accuracy of the network failure: {100 * correct_fail // failure} %')
         print(f'Accuracy of the network success: {100 * correct_success // success} %')
 
+        # writer.add_scalars("Loss", {'Train': running_loss,}, epoch)            
+        # writer.add_scalars('Accuracy', {'Train': (100 * correct // total)} , epoch)
+
     print('Finished Training')
 
     torch.save(model.state_dict(), "train_model.pth")
 
 
 ## Load model
-model.load_state_dict(torch.load("train_model.pth"))
+# model.load_state_dict(torch.load("train_model.pth"))
 
 ## Testing loop
 def test_model():
@@ -191,8 +204,7 @@ def test_model():
         print(f'Accuracy of the network on the test images: {100 * correct // total} %')
         print(f'Accuracy of the network failure: {100 * correct_fail // failure} %')
         print(f'Accuracy of the network success: {100 * correct_success // success} %')
-
-
-# train_model()
+    
+train_model()
 
 test_model()

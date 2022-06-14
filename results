@@ -20,3 +20,29 @@ Test accuracy = (100% fail, 0% succes)
 - RESNET18 Pretrained (Color images)
 Train Accuracy = 93%
 Test accuracy = (91% fail, 99% succes)
+
+
+##############################################################
+- RESNET18, 25 epochs, Adam (0.00001)
+Own dataset: 
+Train: 93% overall, 66% failure, 99% success
+Test: 87% overall, 44% failure, 100% success
+
+Internet dataset:
+Train: 94% overall, 99% failure, 72% success
+Test: 23% overall, 98% failure, 1% success
+
+
+- RESNET18, 25 epochs, Adam (0.001)
+
+
+- RESNET18 (Pretrained + own training), 25 epochs, Adam (0.00001)
+Train: 98% overall, 92% failure, 99% success
+Test: 94% overall, 77% failure, 100% success
+
+Internet dataset:
+Train: 96% overall, 99% failure, 82% success
+Test: 22% overall, 100% failure, 0% success
+
+
+##############################################################
