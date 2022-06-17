@@ -1,3 +1,4 @@
+# following the tutorial at https://towardsdev.com/implement-resnet-with-pytorch-a9fb40a77448
 import torch
 import torch.nn as nn
 
