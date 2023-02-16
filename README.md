@@ -1,6 +1,6 @@
 # Computer-Vision-Project
 
-This is the repository for the project for CS4245 Seminar Computer Vision by Deep Learning. The goal of the project is 3d-printer failure detection. To that end, a dataset was created from scratch with videos created by the team as well as videos found on the internet. A simple CNN as well as ResNet18 are used to demonstrate the application.
+This is the repository for the project for Computer Vision by Deep Learning. The goal of the project is 3d-printer failure detection. To that end, a dataset was created from scratch with videos created by the team as well as videos found on the internet. A simple CNN as well as ResNet18 are used to demonstrate the application.
 
 A requirements.txt file is provided for easy instalation of the dependencies of the project. The following command installs all of them:
 ```console
